@@ -143,6 +143,14 @@ class Homography:
         #min_coord  = np.argwhere(np.abs(V) == np.abs(V).min())
         return V[:, -1] #V[:, min_coord[0][1]]
 
+    def estimate_camera_position(self, H):
+        r1 = H[:, 0]
+        r2 = H[:, 1]
+        t = H[:, 2]
+        r3 = np.cross(r1, r2)
+        R = np.array([r1, r2, r3])
+        return R, t
+
     def __A_i(self, x0, y0, x1, y1):
         return np.array([ 
             [-x0, -y0, -1.0, 0.0, 0.0, 0.0, x0 * x1, y0 * x1, x1], 
