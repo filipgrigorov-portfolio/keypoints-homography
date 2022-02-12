@@ -8,6 +8,27 @@ np.set_printoptions(suppress=True)
 
 DEBUG = False
 
+class Angle:
+    def __init__(self, alpha, beta, gamma):
+        self.alpha = alpha
+        self.beta = beta
+        self.gamma = gamma
+        self.angles = [self.alpha, self.beta, self.gamma]
+
+    def to_degrees(self):
+        self.alpha = (180.0 * self.alpha) / np.pi
+        self.beta = (180.0 * self.beta) / np.pi
+        self.gamma = (180.0 * self.gamma) / np.pi
+        self.angles = [self.alpha, self.beta, self.gamma]
+        return self
+
+    def to_rads(self):
+        self.alpha = (np.pi * self.alpha) / 180.0
+        self.beta = (np.pi * self.beta) / 180.0
+        self.gamma = (np.pi * self.gamma) / 180.0
+        self.angles = [self.alpha, self.beta, self.gamma]
+        return self
+
 def argminwhere(mat):
     rows, cols = mat.shape
     min_vals = []
@@ -144,12 +165,36 @@ class Homography:
         return V[:, -1] #V[:, min_coord[0][1]]
 
     def estimate_camera_position(self, H):
+        H /= np.linalg.norm(H[:, 0]) # ???
         r1 = H[:, 0]
         r2 = H[:, 1]
         t = H[:, 2]
         r3 = np.cross(r1, r2)
         R = np.array([r1, r2, r3])
         return R, t
+
+    # Note: (alpha, beta, gamma)
+    def compute_euler_angles(self, R):
+        R12 = R[0, 1]; R13 = R[0, 2]
+        R11 = R[0, 0]; R21 = R[1, 0]; R31 = R[2, 0]
+        R32 = R[2, 1]; R33 = R[2, 2]
+        if R31 != -1 or R31 != 1: # beta is not pi/2 or -pi/2 => cos(beta) = 0
+            beta1 = -np.arcsin(R31)
+            beta2 = np.pi - beta1
+            gamma1 = np.arctan2(R32 / np.cos(beta1), R33 / np.cos(beta1))
+            gamma2 = np.arctan2(R32 / np.cos(beta2), R33 / np.cos(beta2))
+            alpha1 = np.arctan2(R21 / np.cos(beta1), R11 / np.cos(beta1))
+            alpha2 = np.arctan2(R21 / np.cos(beta2), R11 / np.cos(beta2))
+        else: # Gimball lock (decreases in dof)
+            alpha = 1.0
+            if R31 == -1: # 
+                beta = np.pi / 2.0
+                gamma = alpha + np.arctan2(R12, R13)
+            else:
+                beta = -np.pi / 2.0
+                gamma = -alpha + np.arctan2(-R12, -R13)
+
+        return Angle(alpha1, beta1, gamma1), Angle(alpha2, beta2, gamma2)
 
     def __A_i(self, x0, y0, x1, y1):
         return np.array([ 
