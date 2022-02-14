@@ -164,6 +164,17 @@ class Homography:
         #min_coord  = np.argwhere(np.abs(V) == np.abs(V).min())
         return V[:, -1] #V[:, min_coord[0][1]]
 
+    '''
+        Note: 
+        We know x = K[R|t]X and x' = K'[R'|t']X
+        x' = Hx
+        K'[R'|t']X = HK[R|t]X
+        K'[R'|t'] = HK[R|t]
+        H = K.inv( [R'|t'] / [R|t] )K' = K.inv[R_rel|t_rel]K'
+        K = K' (assuming same camera => same camera intrinsics)
+        H = [R_rel|t_rel] where these are the relative transformations between the camera poses
+        H = [r1 r2 t] where r3 = cross(r1, r2) (these are rotational vectors)
+    '''
     def estimate_camera_position(self, H):
         H /= np.linalg.norm(H[:, 0]) # ???
         r1 = H[:, 0]
